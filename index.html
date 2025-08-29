@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Content Strategy Engine — Prototype</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#0f172a; --bg2:#0b1220; --card:#0f172a;
+    --accent1: #7c3aed; --accent2:#3b82f6; --glass: rgba(255,255,255,0.06);
+    --muted:#94a3b8;
+  }
+  *{box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+  body{margin:0;min-height:100vh;background:linear-gradient(135deg,#071029,#071229 40%, #0b1b2b);color:#e6eef8;padding:28px;}
+  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns: 360px 1fr; gap:22px;align-items:start;}
+  /* Left panel - Inputs */
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03);}
+  h1{font-size:18px;margin:0 0 12px;}
+  .small{font-size:13px;color:var(--muted);margin-bottom:12px;}
+  label{display:block;font-size:13px;color:#cfe3ff;margin-top:10px;margin-bottom:8px}
+  input[type="text"], select, textarea{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background: rgba(255,255,255,0.02);color:#eaf4ff;font-size:14px;outline:none;
+    transition:box-shadow .18s, border-color .18s, transform .08s;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus{box-shadow:0 6px 18px rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.6);transform:translateY(-1px);}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;font-weight:600;cursor:pointer;box-shadow:0 8px 26px rgba(59,130,246,0.12);}
+  .muted-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px;border-radius:10px;}
+  .search-row{display:flex;gap:10px;margin-top:12px}
+  .meta{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .pill{background:rgba(255,255,255,0.03);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+  /* Right area - outputs */
+  .board{display:grid;grid-template-rows:auto 1fr;gap:18px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+  .card h3{margin:0 0 8px;font-size:14px}
+  .profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .profile{background:linear-gradient(180deg,#f8fafc05,#f8fafc03);padding:12px;border-radius:12px;color:#0b1220}
+  .highlight{background:linear-gradient(90deg,#fff59d,#ffd59a);padding:3px 6px;border-radius:6px;font-weight:700;font-size:13px;}
+  /* Trends list */
+  .trend{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02)}
+  .platform{width:36px;height:36px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0b1220}
+  .trend-title{font-weight:700;color:#eaf4ff}
+  .trend-sub{font-size:12px;color:var(--muted)}
+  /* analyzer lists */
+  ul.suggest{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  li.suggest-item{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
+  .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px}
+  .day{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:8px;border-radius:8px;font-size:12px}
+  .comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .comp{padding:10px;border-radius:12px;background:linear-gradient(180deg,#ffffff06,#ffffff02);color:#eaf4ff;border:1px solid rgba(255,255,255,0.03)}
+  footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+  /* responsive */
+  @media (max-width:980px){.wrap{grid-template-columns:1fr;}.cards{grid-template-columns:repeat(2,1fr)} .calendar{grid-template-columns:repeat(4,1fr)}}
+  @media (max-width:640px){.cards{grid-template-columns:1fr}.calendar{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Left: Inputs (Step 1) -->
+  <div class="panel">
+    <h1>Step 1 — Strategy Setup</h1>
+    <div class="small">Enter target audience, niche & focus. We'll simulate trend discovery and generate strategy suggestions.</div>
+
+    <label for="audience">Target Audience</label>
+    <input id="audience" type="text" placeholder="e.g. Gen Z, Working Moms, Developers" value="Gen Z">
+
+    <label for="niche">Content Niche</label>
+    <input id="niche" type="text" placeholder="e.g. Skincare, Finance, Fitness" value="Skincare">
+
+    <label for="focus">Focus / Goal</label>
+    <select id="focus">
+      <option>Engagement & UGC</option>
+      <option>Traffic</option>
+      <option>Leads & Conversions</option>
+      <option>Brand Awareness</option>
+    </select>
+
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn" id="analyzeBtn">Analyze →</button>
+      <button class="muted-btn" id="resetBtn">Reset</button>
+    </div>
+
+    <div class="meta" style="margin-top:14px">
+      <div class="pill" id="selected-meta">Niche: Skincare • Audience: Gen Z</div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div style="font-size:13px;color:var(--muted)">Quick tips</div>
+      <ul style="margin-top:8px;color:var(--muted);font-size:13px">
+        <li>Use focused niche to get precise trends.</li>
+        <li>Pick a goal (engagement/traffic) to change strategy style.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right: Output dashboard -->
+  <div class="board">
+    <div class="cards">
+      <div class="card" id="trendsCard">
+        <h3>Trend Discovery</h3>
+        <div id="trendsList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+          <!-- dynamic -->
+        </div>
+      </div>
+
+      <div class="card" id="analyzerCard">
+        <h3>Content Analyzer</h3>
+        <div id="analyzerBody" style="margin-top:10px">
+          <!-- dynamic -->
+        </div>
+      </div>
+
+      <div class="card" id="strategyCard">
+        <h3>Strategy Generator</h3>
+        <div id="strategyBody" style="margin-top:10px">
+          <!-- dynamic -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Profiles & Competitors -->
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-top:12px">
+      <div class="card" style="flex:1">
+        <h3>Sample Profiles</h3>
+        <div id="profilesContainer" class="profile-grid" style="margin-top:10px">
+          <!-- dynamic -->
+        </div>
+      </div>
+
+      <div class="card" style="width:360px">
+        <h3>Competitor Tracker</h3>
+        <div id="compContainer" class="comp-grid" style="margin-top:10px">
+          <!-- dynamic -->
+        </div>
+      </div>
+    </div>
+
+    <footer>Prototype: mock data + keyword analysis • Designed for demo</footer>
+  </div>
+</div>
+
+<script>
+/* -----------------------------
+   Mock data used for simulation
+   ----------------------------- */
+const MOCK_TRENDS = [
+  {platform:'YouTube', trend:'Glass skin tips', indicator:'rising', sample:'#glassskintips'},
+  {platform:'Reddit', trend:'Acne patch routines', indicator:'stable', sample:'/r/SkincareAddiction'},
+  {platform:'Twitter', trend:'No-makeup challenge', indicator:'rising', sample:'#nomakeupchallenge'},
+  {platform:'YouTube', trend:'Sunscreen myths', indicator:'growing', sample:'#sunscreen'},
+  {platform:'Instagram', trend:'K-Beauty routines', indicator:'rising', sample:'#kbeauty'},
+];
+
+const MOCK_CONTENT = [
+  {format:'Reels',engagement:'High',best_time:'7–9 PM IST',hook:'X Days Challenge',notes:'Short, fast edits; trending audio; clear before-after'},
+  {format:'YouTube Shorts',engagement:'High',best_time:'6–9 PM IST',hook:'Before/After',notes:'Vertical, sub-second cuts; CTA to Instagram'},
+  {format:'Carousel Post',engagement:'Medium',best_time:'11 AM - 1 PM',hook:'How-to steps',notes:'In-depth steps; saves high'},
+  {format:'Long-form Blog',engagement:'Low',best_time:'Any',hook:'Ultimate Guide',notes:'SEO long-term; repurpose snippets'},
+];
+
+const MOCK_PROFILES = [
+  {name:'Anjali Mehta',role:'HR Manager',company:'HirePulse',desc:'HR specialist focused on employer branding and hiring',industry:'Recruitment',location:'Delhi'},
+  {name:'Rohit Sharma',role:'Content Creator',company:'GlowWithAditi',desc:'YouTuber making skincare routines',industry:'Beauty',location:'Mumbai'},
+  {name:'Priya Verma',role:'Community Lead',company:'SkinHelp',desc:'Moderates skincare subreddit and community campaigns',industry:'Community',location:'Bengaluru'},
+];
+
+const MOCK_COMPETITORS = [
+  {handle:'GlowWithAditi',posts_week:5,formats:['Reels','Shorts'],top_topic:'Glass skin',est_engagement:8},
+  {handle:'SkinCareKing',posts_week:3,formats:['Shorts','Carousels'],top_topic:'Acne hacks',est_engagement:6},
+  {handle:'DermaDaily',posts_week:4,formats:['Reels','Blog'],top_topic:'Sunscreen myths',est_engagement:7},
+];
+
+/* -----------------------------
+   Utility helpers
+   ----------------------------- */
+function pick(array, n=1){
+  // random pick n items
+  const s=[...array]; const out=[];
+  for(let i=0;i<n && s.length;i++){
+    const idx = Math.floor(Math.random()*s.length);
+    out.push(s.splice(idx,1)[0]);
+  }
+  return out;
+}
+
+function sanitize(text){
+  if(!text) return '';
+  return String(text).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* -----------------------------
+   DOM refs
+   ----------------------------- */
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resetBtn = document.getElementById('resetBtn');
+const audienceEl = document.getElementById('audience');
+const nicheEl = document.getElementById('niche');
+const focusEl = document.getElementById('focus');
+const metaEl = document.getElementById('selected-meta');
+const trendsList = document.getElementById('trendsList');
+const analyzerBody = document.getElementById('analyzerBody');
+const strategyBody = document.getElementById('strategyBody');
+const profilesContainer = document.getElementById('profilesContainer');
+const compContainer = document.getElementById('compContainer');
+
+/* -----------------------------
+   Main analyze flow
+   ----------------------------- */
+analyzeBtn.addEventListener('click', () => {
+  const audience = (audienceEl.value||'').trim();
+  const niche = (nicheEl.value||'').trim();
+  const focus = (focusEl.value||'').trim();
+  metaEl.textContent = `Niche: ${niche || '—'} • Audience: ${audience || '—'} • Goal: ${focus || '—'}`;
+
+  // 1) Trend discovery - filter mock trends by niche keywords
+  const trends = discoverTrends(niche);
+  renderTrends(trends);
+
+  // 2) Content analyzer - analyze mock content relative to focus & trends
+  const analysis = analyzeContent(trends, focus);
+  renderAnalyzer(analysis);
+
+  // 3) Strategy generator - build calendar (7-day preview + expand to 30)
+  const plan = generatePlan(niche, audience, focus, trends);
+  renderStrategy(plan);
+
+  // 4) Profile viewer (mock)
+  renderProfiles(MOCK_PROFILES, trends);
+
+  // 5) Competitor tracker mock
+  renderCompetitors(MOCK_COMPETITORS, niche);
+});
+
+/* Reset */
+resetBtn.addEventListener('click', () => {
+  audienceEl.value=''; nicheEl.value=''; focusEl.value='Engagement & UGC';
+  metaEl.textContent = 'Niche: — • Audience: —';
+  trendsList.innerHTML=''; analyzerBody.innerHTML=''; strategyBody.innerHTML=''; profilesContainer.innerHTML=''; compContainer.innerHTML='';
+});
+
+/* -----------------------------
+   Implementation: Discover Trends
+   ----------------------------- */
+function discoverTrends(niche){
+  // simple keyword match: choose trends containing words from niche
+  const kw = (niche||'').toLowerCase().split(/\s+/).filter(Boolean);
+  const matched = MOCK_TRENDS.filter(t => {
+    const all = (t.trend + ' ' + t.sample).toLowerCase();
+    return kw.some(k => all.includes(k)) || Math.random() > 0.55; // some randomness
+  });
+  // always return 3-5 results
+  return matched.length ? matched.slice(0,4) : pick(MOCK_TRENDS,3);
+}
+
+function renderTrends(trends){
+  trendsList.innerHTML='';
+  trends.forEach(t => {
+    const div = document.createElement('div'); div.className='trend';
+    const p = document.createElement('div'); p.style.flex='1';
+    const plat = document.createElement('div'); plat.className='platform';
+    plat.textContent = t.platform[0] || '?';
+    p.innerHTML = `<div class="trend-title">${sanitize(t.trend)}</div><div class="trend-sub">${sanitize(t.platform)} • ${t.indicator} • sample: ${sanitize(t.sample)}</div>`;
+    div.appendChild(plat); div.appendChild(p);
+    trendsList.appendChild(div);
+  });
+}
+
+/* -----------------------------
+   Implementation: Content Analyzer
+   ----------------------------- */
+function analyzeContent(trends, focus){
+  // rank formats by mock engagement and trend relevance
+  const relevance = trends.map((t,i)=> t.trend);
+  // score content formats based on presence of 'challenge','before', etc.
+  const scored = MOCK_CONTENT.map(c => {
+    let score = (c.engagement === 'High')? 8 : (c.engagement === 'Medium'?5:2);
+    if(focus.includes('Engagement')) score += 2;
+    // boost if format matches trending platforms (e.g. Reels/Shorts)
+    if(relevance.some(r => r.toLowerCase().includes('glass') || r.toLowerCase().includes('acne'))) {
+      if(c.format.toLowerCase().includes('reel') || c.format.toLowerCase().includes('short')) score+=2;
+    }
+    return {...c, score};
+  }).sort((a,b)=>b.score-a.score);
+  // derive quick suggestions
+  const top = scored.slice(0,3);
+  return {scored, top, trends};
+}
+
+function renderAnalyzer({scored, top, trends}){
+  analyzerBody.innerHTML='';
+  const topList = document.createElement('ul'); topList.className='suggest';
+  top.forEach(item=>{
+    const li = document.createElement('li'); li.className='suggest-item';
+    li.innerHTML = `<div><div style="font-weight:700">${sanitize(item.format)}</div><div style="font-size:12px;color:var(--muted)">${sanitize(item.hook)} • ${sanitize(item.best_time)}</div></div>
+                    <div style="text-align:right"><div style="font-weight:700">${item.score}</div><div style="font-size:12px;color:var(--muted)">score</div></div>`;
+    topList.appendChild(li);
+  });
+  const note = document.createElement('div'); note.style.marginTop='10px'; note.style.fontSize='13px'; note.style.color='var(--muted)';
+  note.textContent = 'Top formats and hooks based on trends & goal.';
+  analyzerBody.appendChild(topList); analyzerBody.appendChild(note);
+}
+
+/* -----------------------------
+   Implementation: Strategy Generator
+   ----------------------------- */
+function generatePlan(niche, audience, focus, trends){
+  // build a 7-day plan (expandable)
+  const suggestions = [
+    {template:`${niche} quick hack`, format:'Reels'},
+    {template:`${niche} mythbuster`, format:'Shorts'},
+    {template:`How to: ${niche} routine`, format:'Carousel'},
+    {template:`Before/After: ${niche}`, format:'Reels'},
+    {template:`Expert tip on ${niche}`, format:'Blog'},
+    {template:`User story: ${audience} success`, format:'Reels'},
+    {template:`Challenge: 7-day ${niche} challenge`, format:'Reels'},
+  ];
+  // map to 30 days
+  const days = [];
+  for(let i=0;i<30;i++){
+    const s = suggestions[i % suggestions.length];
+    const title = s.template + (i%2===0?` — ${trends[Math.floor(Math.random()*trends.length)]?.trend || ''}` : '');
+    days.push({day:i+1, title, format:s.format});
+  }
+  return days;
+}
+
+function renderStrategy(days){
+  strategyBody.innerHTML='';
+  // show first 7 days preview
+  const preview = days.slice(0,7);
+  const cal = document.createElement('div'); cal.className='calendar';
+  preview.forEach(d=>{
+    const box = document.createElement('div'); box.className='day';
+    box.innerHTML = `<div style="font-weight:700">Day ${d.day}</div><div style="margin-top:6px;font-size:13px">${sanitize(d.title)}</div><div style="margin-top:6px;font-size:12px;color:var(--muted)">${sanitize(d.format)}</div>`;
+    cal.appendChild(box);
+  });
+  strategyBody.appendChild(cal);
+  const more = document.createElement('div'); more.style.marginTop='10px';
+  const btn = document.createElement('button'); btn.className='muted-btn'; btn.textContent='Expand to 30-day calendar';
+  btn.onclick = ()=> {
+    strategyBody.innerHTML='';
+    const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(5,1fr)'; grid.style.gap='8px';
+    days.forEach(d=>{
+      const b = document.createElement('div'); b.className='day'; b.style.fontSize='12px';
+      b.innerHTML = `<div style="font-weight:700">D${d.day}</div><div style="margin-top:6px">${sanitize(d.title)}</div><div style="margin-top:6px;color:var(--muted);font-size:12px">${sanitize(d.format)}</div>`;
+      grid.appendChild(b);
+    });
+    strategyBody.appendChild(grid);
+  };
+  more.appendChild(btn);
+  strategyBody.appendChild(more);
+}
+
+/* -----------------------------
+   Implementation: Profiles & Competitors
+   ----------------------------- */
+function renderProfiles(profiles, trends){
+  profilesContainer.innerHTML='';
+  profiles.forEach(p=>{
+    const div = document.createElement('div'); div.className='profile';
+    // highlight if profile role or desc contains trend keywords
+    const matches = trends.filter(t => (p.role+p.desc+p.company).toLowerCase().includes(t.trend.toLowerCase().split(' ')[0]));
+    const tag = matches.length ? `<div style="margin-bottom:6px"><span class="highlight">${sanitize(matches[0].trend)}</span></div>` : '';
+    div.innerHTML = `${tag}<div style="font-weight:700">${sanitize(p.name)}</div><div style="font-size:13px;color:var(--muted)">${sanitize(p.role)} • ${sanitize(p.company)}</div><div style="margin-top:8px;font-size:13px;color:#0b1220">${sanitize(p.desc)}</div>`;
+    profilesContainer.appendChild(div);
+  });
+}
+
+function renderCompetitors(comps, niche){
+  compContainer.innerHTML='';
+  comps.forEach(c=>{
+    const div = document.createElement('div'); div.className='comp';
+    const overlap = (c.top_topic||'').toLowerCase().includes(niche.toLowerCase()) ? '<div style="font-size:12px;color:#a7f3d0">Topical overlap</div>' : '';
+    div.innerHTML = `<div style="font-weight:700">${sanitize(c.handle)}</div><div style="font-size:13px;color:var(--muted)">${sanitize(c.formats.join(', '))} • ${c.posts_week} posts/week</div><div style="margin-top:8px;font-size:13px;color:var(--muted)">Top: ${sanitize(c.top_topic)}</div>${overlap}<div style="margin-top:8px;font-size:13px;font-weight:700">Est. engagement: ${c.est_engagement}/10</div>`;
+    compContainer.appendChild(div);
+  });
+}
+
+/* -----------------------------
+   Auto-run initial analyze to show demo
+   ----------------------------- */
+document.addEventListener('DOMContentLoaded', ()=> analyzeBtn.click());
+</script>
+</body>
+</html>
